@@ -1,29 +1,30 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import API from "../axios";
 import { useNavigate } from "react-router-dom";
+import type { Product } from "../types";
 
-const Navbar = () => {
+const Navbar: React.FC = () => {
   const getInitialTheme = () => {
     const storedTheme = localStorage.getItem("theme");
     return storedTheme ? storedTheme : "light";
   };
 
-  const [theme, setTheme] = useState(getInitialTheme());
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [isSuggesting, setIsSuggesting] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
-  const inputRef = useRef(null);
+  const [theme, setTheme] = useState<string>(getInitialTheme());
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [isSuggesting, setIsSuggesting] = useState<boolean>(false);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState<boolean>(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await API.get("/");
-        const uniqueCategories = [...new Set(response.data.map(p => p.category).filter(Boolean))];
+        const uniqueCategories = [...new Set(response.data.map((p: Product) => p.category).filter(Boolean))] as string[];
         setCategories(uniqueCategories);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -65,8 +66,8 @@ const Navbar = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
+  const handleSearchSubmit = (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLDivElement>) => {
+    if (e) e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/?search=${encodeURIComponent(searchQuery)}`);
       setIsSearchOpen(false);
@@ -160,7 +161,7 @@ const Navbar = () => {
                         type="text"
                         ref={inputRef}
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                         onFocus={() => {
                           if (searchQuery.trim()) setShowSuggestions(true);
                         }}

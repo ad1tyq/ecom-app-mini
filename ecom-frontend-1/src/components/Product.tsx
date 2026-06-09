@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../axios";
+import type { Product as ProductType } from "../types";
 
-const Product = () => {
-  const { id } = useParams();
+const Product: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [product, setProduct] = useState<ProductType | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchProduct = async () => {

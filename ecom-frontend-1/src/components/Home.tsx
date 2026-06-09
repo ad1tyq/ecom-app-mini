@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import API from "../axios";
+import type { Product } from "../types";
 
-
-const Home = () => {
-  const [products, setProducts] = useState([]);
-  const [isError, setIsError] = useState(false);
-  const [inStockOnly, setInStockOnly] = useState(false);
+const Home: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const [searchParams] = useSearchParams();
@@ -34,7 +34,7 @@ const Home = () => {
     fetchData();
   }, [category, keyword]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     try {
       await API.delete(`/${id}`);
       setProducts(products.filter(p => p.id !== id));
@@ -92,7 +92,7 @@ const Home = () => {
         <div className="flex items-center gap-3">
           <span className="text-sm font-medium text-apple-text dark:text-dark-text">Show In Stock Only</span>
           <label className="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="sr-only peer" />
+            <input type="checkbox" checked={inStockOnly} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInStockOnly(e.target.checked)} className="sr-only peer" />
             <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-apple-blue"></div>
           </label>
         </div>
@@ -133,15 +133,15 @@ const Home = () => {
                 </div>
                 <div className="pt-4 flex items-center justify-between">
                   <p className="text-xl font-medium text-apple-text dark:text-dark-text">₹{product.price}</p>
-                  <button onClick={(e) => e.stopPropagation()} className="px-5 py-2.5 rounded-full bg-apple-blue/10 dark:bg-apple-blue/20 text-apple-blue dark:text-[#4da6ff] font-medium hover:bg-apple-blue hover:text-white dark:hover:bg-apple-blue dark:hover:text-white transition-colors">
+                  <button onClick={(e: React.MouseEvent<HTMLButtonElement>) => e.stopPropagation()} className="px-5 py-2.5 rounded-full bg-apple-blue/10 dark:bg-apple-blue/20 text-apple-blue dark:text-[#4da6ff] font-medium hover:bg-apple-blue hover:text-white dark:hover:bg-apple-blue dark:hover:text-white transition-colors">
                     Add to Bag
                   </button>
                 </div>
                 <div className="pt-2 flex items-center gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); navigate(`/edit_product/${product.id}`); }} className="px-4 py-2 rounded-full bg-apple-blue text-white text-sm font-medium hover:bg-[#005bb5] hover:scale-105 transition-all duration-300">
+                  <button onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); navigate(`/edit_product/${product.id}`); }} className="px-4 py-2 rounded-full bg-apple-blue text-white text-sm font-medium hover:bg-[#005bb5] hover:scale-105 transition-all duration-300">
                     Edit
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(product.id); }} className="px-4 py-2 rounded-full border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  <button onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); handleDelete(Number(product.id)); }} className="px-4 py-2 rounded-full border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                     Delete
                   </button>
                 </div>

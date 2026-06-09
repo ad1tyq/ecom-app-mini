@@ -1,4 +1,4 @@
-
+import React from "react";
 import Home from "./components/Home";
 import Navbar from "./components/Navbar";
 import AddProduct from "./components/AddProduct";
@@ -6,7 +6,7 @@ import UpdateProduct from "./components/UpdateProduct";
 import Product from "./components/Product";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-function App() {
+const App: React.FC = () => {
   return (
       <BrowserRouter>
         <Navbar />
