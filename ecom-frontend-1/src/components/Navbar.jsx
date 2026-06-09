@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+import API from "../axios";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
@@ -11,6 +11,9 @@ const Navbar = () => {
   const [theme, setTheme] = useState(getInitialTheme());
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [categories, setCategories] = useState([]);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const inputRef = useRef(null);
@@ -19,7 +22,7 @@ const Navbar = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:8080/api/products");
+        const response = await API.get("/");
         const uniqueCategories = [...new Set(response.data.map(p => p.category).filter(Boolean))];
         setCategories(uniqueCategories);
       } catch (error) {
@@ -35,11 +38,39 @@ const Navbar = () => {
     }
   }, [isSearchOpen]);
 
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (!searchQuery.trim()) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+      setIsSuggesting(true);
+      setShowSuggestions(true);
+      try {
+        const response = await API.get(`/search?keyword=${encodeURIComponent(searchQuery)}`);
+        setSuggestions(response.data);
+      } catch (error) {
+        console.error("Error fetching suggestions:", error);
+        setSuggestions([]);
+      } finally {
+        setIsSuggesting(false);
+      }
+    };
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchSuggestions();
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/?search=${encodeURIComponent(searchQuery)}`);
       setIsSearchOpen(false);
+      setShowSuggestions(false);
     }
   };
 
@@ -130,13 +161,68 @@ const Navbar = () => {
                         ref={inputRef}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onFocus={() => {
+                          if (searchQuery.trim()) setShowSuggestions(true);
+                        }}
+                        onBlur={() => {
+                          // Delay hiding to allow click to register on suggestions
+                          setTimeout(() => setShowSuggestions(false), 200);
+                        }}
                         placeholder="Search..."
                         className="bg-transparent border-none outline-none text-sm w-full text-[#1d1d1f] dark:text-[#f5f5f7] placeholder:text-[#86868b]"
                       />
-                      <button type="button" onClick={() => setIsSearchOpen(false)} className="ml-1 flex items-center shrink-0">
+                      <button type="button" onClick={() => { setIsSearchOpen(false); setSearchQuery(""); setShowSuggestions(false); }} className="ml-1 flex items-center shrink-0">
                         <i className="bi bi-x text-sm cursor-pointer text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80 hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7] transition-colors"></i>
                       </button>
                     </form>
+                    
+                    {/* Autocomplete Dropdown */}
+                    <div className={`absolute top-[calc(100%+14px)] right-0 w-64 md:w-80 bg-white/95 dark:bg-[#1d1d1f]/95 backdrop-blur-xl border border-[#d2d2d7]/50 dark:border-white/10 shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 transform origin-top-right ${showSuggestions ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}>
+                      {isSuggesting ? (
+                        <div className="p-5 text-center flex flex-col items-center justify-center space-y-2">
+                          <i className="bi bi-circle-half animate-spin text-apple-blue text-lg"></i>
+                          <span className="text-sm text-[#86868b]">Searching...</span>
+                        </div>
+                      ) : suggestions.length > 0 ? (
+                        <div className="max-h-[300px] overflow-y-auto">
+                          {suggestions.slice(0, 5).map(product => (
+                            <div 
+                              key={product.id}
+                              onClick={() => {
+                                setIsSearchOpen(false);
+                                setShowSuggestions(false);
+                                setSearchQuery("");
+                                navigate(`/product/${product.id}`);
+                              }}
+                              className="flex items-center gap-3 p-3 hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition-colors border-b border-[#d2d2d7]/30 dark:border-white/5 last:border-0"
+                            >
+                              <div className="w-10 h-10 rounded-lg bg-[#f5f5f7] dark:bg-black/20 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                                {product.imageName ? (
+                                  <img src={`/api/${product.id}/image`} alt={product.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <i className="bi bi-box text-[#86868b]"></i>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-[#1d1d1f] dark:text-[#f5f5f7] truncate">{product.name}</p>
+                                <p className="text-xs text-[#86868b] truncate">{product.brand}</p>
+                              </div>
+                            </div>
+                          ))}
+                          {suggestions.length > 5 && (
+                            <div 
+                              onClick={handleSearchSubmit}
+                              className="p-3 text-center text-xs font-medium text-apple-blue hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer transition-colors"
+                            >
+                              View all {suggestions.length} results
+                            </div>
+                          )}
+                        </div>
+                      ) : searchQuery.trim() ? (
+                        <div className="p-5 text-center text-sm text-[#86868b]">No products found matching &quot;{searchQuery}&quot;</div>
+                      ) : null}
+                    </div>
+                    
                   </div>
                   <div className={`absolute left-0 transition-opacity duration-300 flex items-center justify-center h-full ${isSearchOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                     <i onClick={() => setIsSearchOpen(true)} className="bi bi-search text-sm cursor-pointer text-[#1d1d1f]/80 dark:text-[#f5f5f7]/80 hover:text-[#1d1d1f] dark:hover:text-[#f5f5f7] transition-colors"></i>

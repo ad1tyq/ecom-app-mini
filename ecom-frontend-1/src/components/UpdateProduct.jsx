@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import API from "../axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-const AddProduct = () => {
+const UpdateProduct = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState({
     name: "",
@@ -10,11 +11,22 @@ const AddProduct = () => {
     price: "",
     category: "",
     desc: "",
-    releaseDate: new Date().toISOString().split("T")[0],
     available: true,
     quantity: 1,
   });
   const [imageFile, setImageFile] = useState(null);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await API.get(`/${id}`);
+        setProduct(response.data);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+      }
+    };
+    fetchProduct();
+  }, [id]);
 
   const handleChange = (e) => {
     setProduct({ ...product, [e.target.name]: e.target.value });
@@ -25,39 +37,38 @@ const AddProduct = () => {
     try {
       const payload = {
         ...product,
-        id: 0,
+        id,
         price: Number(product.price),
         quantity: Number(product.quantity)
       };
-      
+
       const formData = new FormData();
       formData.append("prod", new Blob([JSON.stringify(payload)], { type: "application/json" }));
       if (imageFile) {
         formData.append("imgFile", imageFile);
       } else {
-        // Create an empty file to satisfy the backend @RequestPart if it's required
-        formData.append("imgFile", new File([], "empty.jpg", { type: "image/jpeg" }));
+        // Add an empty file block in case backend strictly wants it, but we made it optional in backend
       }
 
       console.log("Sending FormData payload");
-      await API.post("/addProduct", formData);
+      await API.put("/updateProduct", formData);
       navigate("/");
     } catch (error) {
-      console.error("Error adding product:", error);
+      console.error("Error updating product:", error);
     }
   };
 
   return (
     <div className="min-h-screen pt-24 bg-apple-bg dark:bg-dark-bg text-apple-text dark:text-dark-text flex flex-col items-center animate-fade-in">
       <div className="w-full max-w-md p-8 bg-white dark:bg-dark-card rounded-[2rem] shadow-lg mt-10">
-        <h2 className="text-2xl font-semibold mb-6 text-center">Add Product</h2>
+        <h2 className="text-2xl font-semibold mb-6 text-center">Update Product</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Product Image</label>
+            <label className="block text-sm font-medium mb-1">Product Image (Optional)</label>
             <div className="w-full px-4 py-3 rounded-xl bg-apple-bg dark:bg-dark-bg border border-gray-200 dark:border-white/10 flex items-center justify-center">
-              <input 
-                type="file" 
-                accept="image/*" 
+              <input
+                type="file"
+                accept="image/*"
                 onChange={(e) => setImageFile(e.target.files[0])}
                 className="w-full text-sm text-apple-gray file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-apple-blue/10 file:text-apple-blue hover:file:bg-apple-blue/20 dark:file:bg-white/10 dark:file:text-white dark:hover:file:bg-white/20 transition-colors"
               />
@@ -76,12 +87,12 @@ const AddProduct = () => {
             <input type="number" name="price" value={product.price} onChange={handleChange} required className="w-full px-4 py-2 rounded-xl bg-apple-bg dark:bg-dark-bg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-apple-blue" />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
-            <input type="text" name="desc" value={product.desc} onChange={handleChange} required className="w-full px-4 py-2 rounded-xl bg-apple-bg dark:bg-dark-bg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-apple-blue" />
-          </div>
-          <div>
             <label className="block text-sm font-medium mb-1">Category</label>
             <input type="text" name="category" value={product.category} onChange={handleChange} required className="w-full px-4 py-2 rounded-xl bg-apple-bg dark:bg-dark-bg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-apple-blue" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <input type="text" name="desc" value={product.desc} onChange={handleChange} required className="w-full px-4 py-2 rounded-xl bg-apple-bg dark:bg-dark-bg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-apple-blue" />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Release Date</label>
@@ -100,7 +111,7 @@ const AddProduct = () => {
           </div>
 
           <button type="submit" className="w-full py-3 rounded-full bg-apple-blue text-white font-medium hover:bg-[#0077ed] transition-colors mt-4">
-            Save Product
+            Update Product
           </button>
         </form>
       </div>
@@ -108,4 +119,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default UpdateProduct;
